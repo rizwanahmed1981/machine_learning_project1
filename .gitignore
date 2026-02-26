@@ -248,3 +248,4 @@ wandb/
 # Virtual environments (additional patterns)
 *.pyc
 *.pyo
+workflow
