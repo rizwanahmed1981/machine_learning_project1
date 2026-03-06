@@ -3,434 +3,238 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Wine Quality Predictor</title>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+  <title>Prediction Results | Wine Quality</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            display: ['Space Grotesk', 'sans-serif'],
+          },
+          colors: {
+            wine: {
+              50: '#fdf2f4',
+              100: '#fce7eb',
+              200: '#f8d0d9',
+              300: '#f2a9ba',
+              400: '#e97592',
+              500: '#d9466b',
+              600: '#c2185b',
+              700: '#a3154d',
+              800: '#881442',
+              900: '#74163c',
+              950: '#4A0E24',
+            },
+            gold: {
+              400: '#E8D5A3',
+              500: '#C9A84C',
+              600: '#B8943F',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
   <style>
-    :root {
-      --wine:       #7B1C3E;
-      --wine-dark:  #4A0E24;
-      --wine-light: #C2185B;
-      --gold:       #C9A84C;
-      --gold-light: #E8D5A3;
-      --cream:      #FAF6F0;
-      --text:       #2C1A1A;
-      --muted:      #8B6A6A;
-      --glass:      rgba(255,255,255,0.08);
-      --border:     rgba(201,168,76,0.25);
-    }
-
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      min-height: 100vh;
-      background: var(--wine-dark);
-      font-family: 'Jost', sans-serif;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 40px 20px;
-      position: relative;
-      overflow-x: hidden;
-    }
-
-    /* Atmospheric background */
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background:
-        radial-gradient(ellipse 80% 60% at 20% 10%, rgba(123,28,62,0.6) 0%, transparent 60%),
-        radial-gradient(ellipse 60% 80% at 80% 90%, rgba(74,14,36,0.8) 0%, transparent 60%),
-        radial-gradient(ellipse 40% 40% at 50% 50%, rgba(201,168,76,0.05) 0%, transparent 70%);
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    /* Floating orbs */
-    .orb {
-      position: fixed;
-      border-radius: 50%;
-      filter: blur(60px);
-      pointer-events: none;
-      z-index: 0;
-      animation: float 8s ease-in-out infinite;
-    }
-    .orb1 { width: 300px; height: 300px; background: rgba(123,28,62,0.3); top: -100px; right: -50px; animation-delay: 0s; }
-    .orb2 { width: 200px; height: 200px; background: rgba(201,168,76,0.12); bottom: 50px; left: -80px; animation-delay: 3s; }
-    .orb3 { width: 150px; height: 150px; background: rgba(194,24,91,0.15); top: 50%; left: 30%; animation-delay: 5s; }
-
-    @keyframes float {
-      0%, 100% { transform: translateY(0px) scale(1); }
-      50% { transform: translateY(-20px) scale(1.05); }
-    }
-
-    /* Main card */
-    .card {
-      position: relative;
-      z-index: 1;
-      width: 100%;
-      max-width: 780px;
-      background: rgba(20, 6, 12, 0.75);
+    body { margin: 0; background: #0a0a0a; overflow-x: hidden; }
+    #canvas-container { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+    
+    .glass-panel {
+      background: rgba(20, 6, 12, 0.7);
       backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      padding: 56px 52px;
-      box-shadow:
-        0 0 0 1px rgba(201,168,76,0.1),
-        0 40px 80px rgba(0,0,0,0.5),
-        inset 0 1px 0 rgba(255,255,255,0.06);
-      animation: slideUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      opacity: 0;
-      transform: translateY(30px);
+      border: 1px solid rgba(201, 168, 76, 0.2);
     }
-
-    @keyframes slideUp {
-      to { opacity: 1; transform: translateY(0); }
+    
+    .gradient-text {
+      background: linear-gradient(135deg, #C9A84C 0%, #E8D5A3 50%, #C9A84C 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
     }
-
-    /* Header */
-    .header {
-      text-align: center;
-      margin-bottom: 44px;
+    
+    .result-glow {
+      box-shadow: 0 0 100px rgba(201, 168, 76, 0.3);
     }
-
-    .wine-icon {
-      width: 56px;
-      height: 56px;
-      margin: 0 auto 20px;
-      background: linear-gradient(135deg, var(--wine), var(--gold));
-      border-radius: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 26px;
-      box-shadow: 0 8px 24px rgba(123,28,62,0.5);
-    }
-
-    .header h1 {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 38px;
-      font-weight: 600;
-      color: var(--cream);
-      letter-spacing: 0.5px;
-      line-height: 1.1;
-      margin-bottom: 10px;
-    }
-
-    .header h1 span {
-      color: var(--gold);
-    }
-
-    .header p {
-      color: var(--muted);
-      font-size: 14px;
-      font-weight: 300;
-      letter-spacing: 0.5px;
-    }
-
-    .divider {
-      width: 60px;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, var(--gold), transparent);
-      margin: 16px auto 0;
-    }
-
-    /* Section label */
-    .section-label {
-      font-size: 10px;
-      font-weight: 500;
-      letter-spacing: 2.5px;
-      text-transform: uppercase;
-      color: var(--gold);
-      margin-bottom: 16px;
-      margin-top: 32px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .section-label::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: var(--border);
-    }
-
-    /* Grid */
-    .grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-    }
-
-    .grid.single {
-      grid-template-columns: 1fr;
-    }
-
-    /* Form group */
-    .form-group {
-      position: relative;
-      animation: fadeIn 0.5s ease forwards;
-      opacity: 0;
-    }
-
-    @keyframes fadeIn {
-      to { opacity: 1; }
-    }
-
-    .form-group:nth-child(1)  { animation-delay: 0.1s; }
-    .form-group:nth-child(2)  { animation-delay: 0.15s; }
-    .form-group:nth-child(3)  { animation-delay: 0.2s; }
-    .form-group:nth-child(4)  { animation-delay: 0.25s; }
-    .form-group:nth-child(5)  { animation-delay: 0.3s; }
-    .form-group:nth-child(6)  { animation-delay: 0.35s; }
-
-    label {
-      display: block;
-      font-size: 11px;
-      font-weight: 500;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-bottom: 8px;
-      transition: color 0.3s;
-    }
-
-    .form-group:focus-within label {
-      color: var(--gold-light);
-    }
-
-    .input-wrap {
-      position: relative;
-    }
-
-    input[type="text"] {
-      width: 100%;
-      padding: 13px 18px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 10px;
-      color: var(--cream);
-      font-family: 'Jost', sans-serif;
-      font-size: 15px;
-      font-weight: 300;
-      transition: all 0.3s ease;
-      outline: none;
-      -webkit-appearance: none;
-    }
-
-    input[type="text"]::placeholder {
-      color: rgba(255,255,255,0.15);
-      font-size: 13px;
-    }
-
-    input[type="text"]:focus {
-      background: rgba(201,168,76,0.06);
-      border-color: rgba(201,168,76,0.5);
-      box-shadow: 0 0 0 3px rgba(201,168,76,0.08), 0 4px 12px rgba(0,0,0,0.2);
-    }
-
-    input[type="text"]:hover:not(:focus) {
-      border-color: rgba(255,255,255,0.15);
-      background: rgba(255,255,255,0.06);
-    }
-
-    /* Valid state */
-    input[type="text"]:valid:not(:placeholder-shown) {
-      border-color: rgba(123,28,62,0.6);
-    }
-
-    /* Submit button */
-    .submit-wrap {
-      margin-top: 40px;
-      text-align: center;
-    }
-
-    .btn-predict {
-      position: relative;
-      display: inline-flex;
-      align-items: center;
-      gap: 12px;
-      padding: 16px 52px;
-      background: linear-gradient(135deg, var(--wine) 0%, #9C1D4E 50%, var(--wine-light) 100%);
-      border: 1px solid rgba(201,168,76,0.3);
-      border-radius: 50px;
-      color: var(--cream);
-      font-family: 'Jost', sans-serif;
-      font-size: 14px;
-      font-weight: 500;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: all 0.4s ease;
-      box-shadow:
-        0 8px 24px rgba(123,28,62,0.4),
-        inset 0 1px 0 rgba(255,255,255,0.1);
-      overflow: hidden;
-    }
-
-    .btn-predict::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(135deg, var(--gold) 0%, var(--wine-light) 100%);
-      opacity: 0;
-      transition: opacity 0.4s ease;
-      border-radius: 50px;
-    }
-
-    .btn-predict:hover::before {
-      opacity: 1;
-    }
-
-    .btn-predict:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 16px 40px rgba(123,28,62,0.5), 0 0 0 1px rgba(201,168,76,0.4);
-    }
-
-    .btn-predict:active {
-      transform: translateY(0px);
-    }
-
-    .btn-predict span, .btn-icon {
-      position: relative;
-      z-index: 1;
-    }
-
-    .btn-icon {
-      font-size: 18px;
-    }
-
-    /* Footer note */
-    .footer-note {
-      text-align: center;
-      margin-top: 24px;
-      font-size: 12px;
-      color: rgba(255,255,255,0.2);
-      letter-spacing: 0.5px;
-    }
-
-    /* Responsive */
-    @media (max-width: 600px) {
-      .card { padding: 36px 24px; }
-      .grid { grid-template-columns: 1fr; }
-      .header h1 { font-size: 28px; }
+    
+    .meter-fill {
+      transition: width 1.5s cubic-bezier(0.16, 1, 0.3, 1);
     }
   </style>
 </head>
-<body>
+<body class="text-gray-100 min-h-screen relative">
 
-  <div class="orb orb1"></div>
-  <div class="orb orb2"></div>
-  <div class="orb orb3"></div>
-
-  <div class="card">
-
-    <!-- Header -->
-    <div class="header">
-      <div class="wine-icon">🍷</div>
-      <h1>Wine Quality <span>Predictor</span></h1>
-      <p>Enter the chemical properties to predict wine quality</p>
-      <div class="divider"></div>
+  <div id="canvas-container"></div>
+  
+  <div class="relative z-10 min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-2xl">
+      
+      <!-- Result Card -->
+      <div class="glass-panel rounded-3xl p-8 sm:p-12 text-center opacity-0" id="result-card">
+        
+        <!-- Success Icon -->
+        <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-gradient-to-br from-wine-600 to-wine-800 flex items-center justify-center result-glow opacity-0 scale-0" id="success-icon">
+          <i data-lucide="check-circle" class="w-10 h-10 text-gold-500"></i>
+        </div>
+        
+        <h1 class="text-3xl sm:text-4xl font-display font-bold mb-2 opacity-0" id="result-title">
+          Prediction <span class="gradient-text">Complete</span>
+        </h1>
+        
+        <p class="text-gray-400 mb-8 opacity-0" id="result-subtitle">Based on the chemical properties analyzed</p>
+        
+        <!-- Quality Score -->
+        <div class="mb-8 opacity-0" id="score-container">
+          <div class="text-6xl sm:text-7xl font-display font-bold gradient-text mb-2" id="quality-score">
+            {{ prediction }}
+          </div>
+          <div class="text-sm text-gray-500 uppercase tracking-widest">Quality Score</div>
+        </div>
+        
+        <!-- Quality Meter -->
+        <div class="mb-8 opacity-0" id="meter-container">
+          <div class="h-4 bg-black/30 rounded-full overflow-hidden border border-white/10">
+            <div class="h-full bg-gradient-to-r from-wine-800 via-wine-600 to-gold-500 meter-fill" id="quality-meter" style="width: 0%"></div>
+          </div>
+          <div class="flex justify-between text-xs text-gray-500 mt-2">
+            <span>Poor</span>
+            <span>Average</span>
+            <span>Excellent</span>
+          </div>
+        </div>
+        
+        <!-- Interpretation -->
+        <div class="glass-panel rounded-2xl p-6 mb-8 opacity-0" id="interpretation">
+          <div class="flex items-center gap-3 mb-3">
+            <i data-lucide="info" class="w-5 h-5 text-gold-500"></i>
+            <h3 class="font-semibold text-white">Analysis</h3>
+          </div>
+          <p class="text-gray-400 text-sm leading-relaxed" id="analysis-text">
+            Calculating wine characteristics...
+          </p>
+        </div>
+        
+        <!-- Actions -->
+        <div class="flex flex-col sm:flex-row gap-4 justify-center opacity-0" id="actions">
+          <a href="/" class="px-8 py-3 rounded-full bg-white/5 border border-white/10 text-white font-medium hover:bg-white/10 transition-all flex items-center justify-center gap-2 group">
+            <i data-lucide="arrow-left" class="w-4 h-4 group-hover:-translate-x-1 transition-transform"></i>
+            New Prediction
+          </a>
+          <button onclick="window.print()" class="px-8 py-3 rounded-full bg-gradient-to-r from-wine-600 to-wine-800 text-white font-medium hover:shadow-lg hover:shadow-wine-600/30 transition-all flex items-center justify-center gap-2">
+            <i data-lucide="download" class="w-4 h-4"></i>
+            Save Result
+          </button>
+        </div>
+        
+      </div>
+      
     </div>
-
-    <!-- Form -->
-    <form action="/predict" method="post">
-
-      <!-- Acidity Section -->
-      <div class="section-label">Acidity Profile</div>
-      <div class="grid">
-        <div class="form-group">
-          <label for="fixed_acidity">Fixed Acidity</label>
-          <div class="input-wrap">
-            <input type="text" name="fixed_acidity" id="fixed_acidity" placeholder="e.g. 7.4" required>
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="volatile_acidity">Volatile Acidity</label>
-          <div class="input-wrap">
-            <input type="text" name="volatile_acidity" id="volatile_acidity" placeholder="e.g. 0.70" required>
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="citric_acid">Citric Acid</label>
-          <div class="input-wrap">
-            <input type="text" name="citric_acid" id="citric_acid" placeholder="e.g. 0.00" required>
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="pH">pH Level</label>
-          <div class="input-wrap">
-            <input type="text" name="pH" id="pH" placeholder="e.g. 3.51" required>
-          </div>
-        </div>
-      </div>
-
-      <!-- Chemical Section -->
-      <div class="section-label">Chemical Composition</div>
-      <div class="grid">
-        <div class="form-group">
-          <label for="residual_sugar">Residual Sugar</label>
-          <div class="input-wrap">
-            <input type="text" name="residual_sugar" id="residual_sugar" placeholder="e.g. 1.9" required>
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="chlorides">Chlorides</label>
-          <div class="input-wrap">
-            <input type="text" name="chlorides" id="chlorides" placeholder="e.g. 0.076" required>
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="sulphates">Sulphates</label>
-          <div class="input-wrap">
-            <input type="text" name="sulphates" id="sulphates" placeholder="e.g. 0.56" required>
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="alcohol">Alcohol %</label>
-          <div class="input-wrap">
-            <input type="text" name="alcohol" id="alcohol" placeholder="e.g. 9.4" required>
-          </div>
-        </div>
-      </div>
-
-      <!-- Sulfur Section -->
-      <div class="section-label">Sulfur Dioxide & Density</div>
-      <div class="grid">
-        <div class="form-group">
-          <label for="free_sulfur_dioxide">Free Sulfur Dioxide</label>
-          <div class="input-wrap">
-            <input type="text" name="free_sulfur_dioxide" id="free_sulfur_dioxide" placeholder="e.g. 11.0" required>
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="total_sulfur_dioxide">Total Sulfur Dioxide</label>
-          <div class="input-wrap">
-            <input type="text" name="total_sulfur_dioxide" id="total_sulfur_dioxide" placeholder="e.g. 34.0" required>
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="density">Density</label>
-          <div class="input-wrap">
-            <input type="text" name="density" id="density" placeholder="e.g. 0.9978" required>
-          </div>
-        </div>
-      </div>
-
-      <!-- Submit -->
-      <div class="submit-wrap">
-        <button type="submit" class="btn-predict">
-          <span class="btn-icon">✦</span>
-          <span>Predict Quality</span>
-        </button>
-      </div>
-
-      <div class="footer-note">All 11 features required for accurate prediction</div>
-
-    </form>
   </div>
+
+  <script>
+    lucide.createIcons();
+    
+    // Parse prediction value
+    const predictionValue = parseFloat("{{ prediction }}") || 0;
+    const percentage = (predictionValue / 10) * 100;
+    
+    // Quality interpretation
+    const getInterpretation = (score) => {
+      if(score >= 7) return "This wine exhibits exceptional characteristics with well-balanced acidity, optimal alcohol content, and excellent chemical composition. Highly recommended for premium collections.";
+      if(score >= 5) return "A good quality wine with decent balance. Suitable for immediate consumption and offers fair value. Some minor improvements in chemical properties could enhance quality.";
+      return "This sample shows basic wine characteristics. May benefit from aging or blending processes to improve overall quality and taste profile.";
+    };
+    
+    document.getElementById('analysis-text').textContent = getInterpretation(predictionValue);
+    
+    // Three.js Background
+    const initThreeJS = () => {
+      const container = document.getElementById('canvas-container');
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+      const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+      
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      container.appendChild(renderer.domElement);
+      
+      const geometry = new THREE.BufferGeometry();
+      const count = 100;
+      const positions = new Float32Array(count * 3);
+      
+      for(let i = 0; i < count * 3; i++) {
+        positions[i] = (Math.random() - 0.5) * 10;
+      }
+      
+      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      
+      const material = new THREE.PointsMaterial({
+        size: 0.03,
+        color: 0xC9A84C,
+        transparent: true,
+        opacity: 0.4
+      });
+      
+      const particles = new THREE.Points(geometry, material);
+      scene.add(particles);
+      
+      camera.position.z = 5;
+      
+      const animate = () => {
+        requestAnimationFrame(animate);
+        particles.rotation.y += 0.001;
+        renderer.render(scene, camera);
+      };
+      
+      animate();
+    };
+    
+    // GSAP Animations
+    const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+    
+    tl.to("#result-card", { opacity: 1, duration: 0.8, delay: 0.2 })
+      .to("#success-icon", { opacity: 1, scale: 1, duration: 0.6, ease: "back.out(1.7)" }, "-=0.4")
+      .to("#result-title", { opacity: 1, y: 0, duration: 0.6 }, "-=0.3")
+      .to("#result-subtitle", { opacity: 1, y: 0, duration: 0.6 }, "-=0.4")
+      .to("#score-container", { opacity: 1, y: 0, duration: 0.6 }, "-=0.3")
+      .to("#meter-container", { opacity: 1, y: 0, duration: 0.6 }, "-=0.3")
+      .to("#interpretation", { opacity: 1, y: 0, duration: 0.6 }, "-=0.3")
+      .to("#actions", { opacity: 1, y: 0, duration: 0.6 }, "-=0.3");
+    
+    // Animate meter fill
+    setTimeout(() => {
+      document.getElementById('quality-meter').style.width = percentage + '%';
+    }, 1000);
+    
+    // Animate score counter
+    const scoreElement = document.getElementById('quality-score');
+    const targetScore = predictionValue;
+    let currentScore = 0;
+    
+    const updateScore = () => {
+      if(currentScore < targetScore) {
+        currentScore += 0.1;
+        scoreElement.textContent = currentScore.toFixed(1);
+        requestAnimationFrame(updateScore);
+      } else {
+        scoreElement.textContent = targetScore.toFixed(1);
+      }
+    };
+    
+    setTimeout(updateScore, 500);
+    
+    window.addEventListener('load', initThreeJS);
+  </script>
 
 </body>
 </html>
