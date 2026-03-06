@@ -241,6 +241,10 @@ tensorboard/
 mlruns/
 .mlflow/
 
+# DagsHub/MLflow credentials
+.env
+.env.local
+
 # Weights & Biases
 wandb/
 .wandb/

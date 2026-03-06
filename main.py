@@ -1,3 +1,11 @@
+import sys
+import codecs
+
+# Set UTF-8 encoding for Windows console to handle emojis from MLflow
+if sys.platform == 'win32':
+    sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
+    sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer, 'strict')
+
 from src.datascience import logger
 from src.datascience.pipeline.data_ingestion_pipeline import DataIngestionTrainingPipeline
 from src.datascience.pipeline.data_validation_pipeline import DataValidationTrainingPipeline

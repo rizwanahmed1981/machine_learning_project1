@@ -1,20 +1,24 @@
 import os
-import pandas as pd
-from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from urllib.parse import urlparse
-import mlflow
+
+import joblib
 import mlflow.sklearn
 import numpy as np
-import joblib
-from src.datascience.entity.config_entity import (ModelEvaluationConfig)
+import pandas as pd
+from dotenv import load_dotenv
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+
 from src.datascience.constants import *
-from src.datascience.utils.common import read_yaml, create_directories,save_json
+from src.datascience.entity.config_entity import ModelEvaluationConfig
+from src.datascience.utils.common import read_yaml, create_directories, save_json
 
+# Load environment variables from .env file
+load_dotenv()
 
-import os
-os.environ["MLFLOW_TRACKING_URI"]="https://dagshub.com/ALIKHAN4/project1.mlflow"
-os.environ["MLFLOW_TRACKING_USERNAME"]="ALIKHAN4"
-os.environ["MLFLOW_TRACKING_PASSWORD"]="b2a3b7692983dc12d2d1e53829a69f4313ee7c96"
+# MLflow tracking configuration from environment variables
+os.environ["MLFLOW_TRACKING_URI"] = os.getenv("MLFLOW_TRACKING_URI")
+os.environ["MLFLOW_TRACKING_USERNAME"] = os.getenv("MLFLOW_TRACKING_USERNAME")
+os.environ["MLFLOW_TRACKING_PASSWORD"] = os.getenv("MLFLOW_TRACKING_PASSWORD")
 
 
 
@@ -56,15 +60,7 @@ class ModelEvaluation:
             mlflow.log_metric("r2", r2)
             mlflow.log_metric("mae", mae)
 
-
-            # Model registry does not work with file store
-            if tracking_url_type_store != "file":
-
-                # Register the model
-                # There are other ways to use the Model Registry, which depends on the use case,
-                # please refer to the doc for more information:
-                # https://mlflow.org/docs/latest/model-registry.html#api-workflow
-                mlflow.sklearn.log_model(model, "model", registered_model_name="ElasticnetModel")
-            else:
-                mlflow.sklearn.log_model(model, "model")
+            # Log model to MLflow (without model registry to avoid 403 permission error)
+            # Model is still tracked and can be viewed in the DagsHub MLflow UI
+            mlflow.sklearn.log_model(model, "model")
     
